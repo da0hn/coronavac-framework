@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>com.da0hn.coronavac</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>coronavac-core</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
