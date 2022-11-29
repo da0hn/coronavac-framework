@@ -6,21 +6,36 @@ public abstract class CoronavacException extends RuntimeException {
 
   @Serial private static final long serialVersionUID = -4294529138339873205L;
 
-  public CoronavacException() {
+  protected CoronavacException() {
   }
 
-  public CoronavacException(final String message) {
+  protected CoronavacException(final String message) {
     super(message);
   }
 
-  public CoronavacException(
+  protected CoronavacException(
+    final String message,
+    final Object... arguments
+  ) {
+    super(String.format(message, arguments));
+  }
+  
+  protected CoronavacException(
+    Throwable cause,
+    final String message,
+    final Object... arguments
+  ) {
+    super(String.format(message, arguments), cause);
+  }
+
+  protected CoronavacException(
     final String message,
     final Throwable cause
   ) {
     super(message, cause);
   }
 
-  public CoronavacException(final Throwable cause) {
+  protected CoronavacException(final Throwable cause) {
     super(cause);
   }
 
