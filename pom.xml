@@ -8,6 +8,7 @@
     <artifactId>coronavac-framework</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
+
     <modules>
         <module>sample</module>
         <module>coronavac-core</module>
@@ -18,6 +19,8 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <coronavac-framework.version>1.0.0</coronavac-framework.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -25,15 +28,27 @@
             <dependency>
                 <groupId>org.da0hn.coronavac</groupId>
                 <artifactId>coronavac-commons</artifactId>
-                <version>1.0.0</version>
+                <version>${coronavac-framework.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.da0hn.coronavac</groupId>
                 <artifactId>coronavac-core</artifactId>
-                <version>1.0.0</version>
+                <version>${coronavac-framework.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

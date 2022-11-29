@@ -15,6 +15,7 @@
         <dependency>
             <groupId>com.da0hn.coronavac</groupId>
             <artifactId>coronavac-commons</artifactId>
+            <version>${coronavac-framework.version}</version>
         </dependency>
     </dependencies>
 
