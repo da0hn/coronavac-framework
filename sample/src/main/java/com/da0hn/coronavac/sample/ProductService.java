@@ -1,7 +1,10 @@
 package com.da0hn.coronavac.sample;
 
+import com.da0hn.coronavac.core.annotations.Component;
+
 import java.util.List;
 
+@Component
 public class ProductService {
 
   private final ProductRepository repo = new ProductRepository();
