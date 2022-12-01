@@ -1,4 +1,4 @@
-package com.da0hn.coronavac.sample;
+package com.da0hn.coronavac.sample.config;
 
 import com.da0hn.coronavac.core.annotations.Configuration;
 import com.da0hn.coronavac.core.annotations.ScanPackage;
