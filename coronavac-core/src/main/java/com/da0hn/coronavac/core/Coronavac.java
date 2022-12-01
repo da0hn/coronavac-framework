@@ -1,54 +1,61 @@
 package com.da0hn.coronavac.core;
 
-import com.da0hn.coronavac.commons.exceptions.ConfigurationNotFoundException;
+import com.da0hn.coronavac.commons.exceptions.ApplicationClassNotFoundException;
 import com.da0hn.coronavac.commons.exceptions.IllegalClassException;
-import com.da0hn.coronavac.commons.exceptions.PackageNotFoundException;
 import com.da0hn.coronavac.core.annotations.Component;
-import com.da0hn.coronavac.core.annotations.Configuration;
-import com.da0hn.coronavac.core.annotations.ScanPackage;
+import com.da0hn.coronavac.core.annotations.CoronavacApplication;
 
 import java.io.File;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class Coronavac {
+import static com.da0hn.coronavac.core.Constants.COMPILED_JAVA_CLASS_EXTENSION;
+import static com.da0hn.coronavac.core.Constants.JAVA_CLASS_EXTENSION;
+
+final class Coronavac {
 
 
   static final Map<Class<?>, Object> instances = new HashMap<>();
-  private static final String BASE_FOLDER = "classes/";
-  private static final String JAVA_CLASS_EXTENSION = ".java";
-  private static final String COMPILED_JAVA_CLASS_EXTENSION = ".class";
+  private static final String BASE_FOLDER = "file:target/classes/";
 
-  public static void initializeContext(final AnnotatedElement configurationClass) {
-    if (!configurationClass.isAnnotationPresent(Configuration.class)) {
-      throw new ConfigurationNotFoundException("Configuration class not found");
+
+  public static void initializeContext(final Class<?> applicationClass) {
+    if (!applicationClass.isAnnotationPresent(CoronavacApplication.class)) {
+      throw new ApplicationClassNotFoundException("Application class not found");
     }
-    final var annotation = configurationClass.getAnnotation(ScanPackage.class);
-    final var basePackage = annotation.value();
+    try {
+      final var applicationClassMetadata = new ApplicationClassMetadata(applicationClass);
 
-    final var packageSystemPath = BASE_FOLDER + basePackage.replace(".", "/");
-    final var classes = findClasses(new File(packageSystemPath));
-    registryInContainer(basePackage, classes);
+      final var classesAsFile = new ClassesDiscovery().find(applicationClassMetadata.baseFolder());
+
+      // test file -> package extraction
+      final var foo = classesAsFile.stream()
+        .map(File::getPath)
+        .map(applicationClassMetadata::extractPackageFrom)
+        .toList();
+
+      registryInContainer(applicationClassMetadata.basePackage(), classesAsFile);
+    }
+    catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+
   }
 
-  private static File[] findClasses(final File file) {
-    if (!file.exists()) {
-      throw new PackageNotFoundException("Package %s not found", file.getName());
-    }
-    return file.listFiles(f -> f.getName().endsWith(COMPILED_JAVA_CLASS_EXTENSION));
-  }
 
   private static void registryInContainer(
     final String basePackage,
-    final File[] classes
+    final Iterable<? extends File> classesAsFile
   ) {
     try {
-      for (final var aClass : classes) {
-        final String className = String.format("%s.%s", basePackage, mountJavaClass(aClass.getName()));
+      for (final var file : classesAsFile) {
+
+        final String className = String.format("%s.%s", basePackage, mountJavaClass(file.getName()));
+
         final Class<?> loadedClass = Class.forName(className);
+
         if (loadedClass.isAnnotationPresent(Component.class)) {
           final Constructor<?> constructor = loadedClass.getConstructor();
           final Object newInstance = constructor.newInstance();
