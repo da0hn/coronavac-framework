@@ -9,17 +9,12 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static com.da0hn.coronavac.core.Constants.COMPILED_JAVA_CLASS_EXTENSION;
-import static com.da0hn.coronavac.core.Constants.JAVA_CLASS_EXTENSION;
 
 final class Coronavac {
 
 
   static final Map<Class<?>, Object> instances = new HashMap<>();
-  private static final String BASE_FOLDER = "file:target/classes/";
 
 
   public static void initializeContext(final Class<?> applicationClass) {
@@ -35,6 +30,7 @@ final class Coronavac {
         .map(File::getPath)
         .map(applicationClassMetadata::fullClassName)
         .toList();
+
       registryInContainer(classesWithFullname);
     }
     catch (final Exception e) {
@@ -66,10 +62,6 @@ final class Coronavac {
     ) {
       throw new IllegalClassException(e);
     }
-  }
-
-  private static String mountJavaClass(final String name) {
-    return name.replace(COMPILED_JAVA_CLASS_EXTENSION, JAVA_CLASS_EXTENSION);
   }
 
 }
