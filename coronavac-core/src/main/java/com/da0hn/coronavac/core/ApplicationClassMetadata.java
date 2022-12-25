@@ -2,6 +2,7 @@ package com.da0hn.coronavac.core;
 
 import java.nio.file.FileSystems;
 
+import static com.da0hn.coronavac.core.Constants.COMPILED_JAVA_CLASS_EXTENSION;
 import static com.da0hn.coronavac.core.Constants.PACKAGE_SEPARATOR;
 
 record ApplicationClassMetadata(Class<?> applicationClass) {
@@ -15,7 +16,7 @@ record ApplicationClassMetadata(Class<?> applicationClass) {
     return this.applicationClass.getPackageName();
   }
 
-  public String extractPackageFrom(final String fileSystemPath) {
+  public String fullClassName(final String fileSystemPath) {
     final String firstPackage = this.firstPackage();
     final var indexFirstFolderEquivalent = fileSystemPath.indexOf(firstPackage);
     final var fullDirectoriesPath = fileSystemPath.substring(indexFirstFolderEquivalent);
@@ -28,7 +29,10 @@ record ApplicationClassMetadata(Class<?> applicationClass) {
   }
 
   private static String toPackage(final String path) {
-    return path.replace(FileSystems.getDefault().getSeparator(), ".");
+    final var fileExtensionIndex = path.indexOf(COMPILED_JAVA_CLASS_EXTENSION);
+    return path.replace(FileSystems.getDefault().getSeparator(), ".")
+      .substring(0, fileExtensionIndex);
+
   }
 
 }

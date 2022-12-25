@@ -9,6 +9,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.da0hn.coronavac.core.Constants.COMPILED_JAVA_CLASS_EXTENSION;
@@ -30,13 +31,11 @@ final class Coronavac {
 
       final var classesAsFile = new ClassesDiscovery().find(applicationClassMetadata.baseFolder());
 
-      // test file -> package extraction
-      final var foo = classesAsFile.stream()
+      final var classesWithFullname = classesAsFile.stream()
         .map(File::getPath)
-        .map(applicationClassMetadata::extractPackageFrom)
+        .map(applicationClassMetadata::fullClassName)
         .toList();
-
-      registryInContainer(applicationClassMetadata.basePackage(), classesAsFile);
+      registryInContainer(classesWithFullname);
     }
     catch (final Exception e) {
       throw new RuntimeException(e);
@@ -45,16 +44,11 @@ final class Coronavac {
   }
 
 
-  private static void registryInContainer(
-    final String basePackage,
-    final Iterable<? extends File> classesAsFile
-  ) {
+  private static void registryInContainer(final Iterable<String> classes) {
     try {
-      for (final var file : classesAsFile) {
+      for (final var fullClassName : classes) {
 
-        final String className = String.format("%s.%s", basePackage, mountJavaClass(file.getName()));
-
-        final Class<?> loadedClass = Class.forName(className);
+        final Class<?> loadedClass = Class.forName(fullClassName);
 
         if (loadedClass.isAnnotationPresent(Component.class)) {
           final Constructor<?> constructor = loadedClass.getConstructor();
