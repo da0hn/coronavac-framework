@@ -7,7 +7,7 @@ import com.da0hn.coronavac.core.annotations.CoronavacApplication;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,20 +47,29 @@ final class Coronavac {
         final Class<?> loadedClass = Class.forName(fullClassName);
 
         if (loadedClass.isAnnotationPresent(Component.class)) {
-          final Constructor<?> constructor = loadedClass.getConstructor();
-          final Object newInstance = constructor.newInstance();
-          instances.put(loadedClass, newInstance);
+          final Constructor<?>[] constructors = loadedClass.getDeclaredConstructors();
+          getNewInstance(constructors);
+          //          final Object newInstance = constructor.newInstance();
+          //          instances.put(loadedClass, newInstance);
         }
       }
     }
-    catch (
-      final ClassNotFoundException
-            | NoSuchMethodException
-            | InvocationTargetException
-            | InstantiationException
-            | IllegalAccessException e
-    ) {
+    catch (final ClassNotFoundException e) {
       throw new IllegalClassException(e);
+    }
+  }
+
+  private static void getNewInstance(final Constructor<?>[] constructors) {
+    final var maybeAnnotedConstructor = Arrays.stream(constructors)
+      .filter(constructor -> constructor.isAnnotationPresent(Component.class))
+      .reduce((a, b) -> {
+        throw new IllegalStateException("Has more than one constructor annotated");
+      });
+
+    if (maybeAnnotedConstructor.isPresent()) {
+
+    } else {
+
     }
   }
 
