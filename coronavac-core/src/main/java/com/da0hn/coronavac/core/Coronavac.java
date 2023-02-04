@@ -4,12 +4,17 @@ import com.da0hn.coronavac.commons.exceptions.ApplicationClassNotFoundException;
 import com.da0hn.coronavac.commons.exceptions.IllegalClassException;
 import com.da0hn.coronavac.core.annotations.Component;
 import com.da0hn.coronavac.core.annotations.CoronavacApplication;
+import com.da0hn.coronavac.core.annotations.Get;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 final class Coronavac {
 
@@ -48,28 +53,84 @@ final class Coronavac {
 
         if (loadedClass.isAnnotationPresent(Component.class)) {
           final Constructor<?>[] constructors = loadedClass.getDeclaredConstructors();
-          getNewInstance(constructors);
-          //          final Object newInstance = constructor.newInstance();
-          //          instances.put(loadedClass, newInstance);
+          final var newInstance = getNewInstance(loadedClass, constructors);
+          instances.put(loadedClass, newInstance);
         }
       }
     }
-    catch (final ClassNotFoundException e) {
+    catch (
+      final ClassNotFoundException
+            | InvocationTargetException
+            | InstantiationException
+            | IllegalAccessException e
+    ) {
       throw new IllegalClassException(e);
     }
   }
 
-  private static void getNewInstance(final Constructor<?>[] constructors) {
+  private static Object getNewInstance(
+    final Class<?> loadedClass,
+    final Constructor<?>[] constructors
+  ) throws InvocationTargetException,
+    InstantiationException, IllegalAccessException {
     final var maybeAnnotedConstructor = Arrays.stream(constructors)
-      .filter(constructor -> constructor.isAnnotationPresent(Component.class))
+      .filter(constructor -> constructor.isAnnotationPresent(Get.class))
       .reduce((a, b) -> {
         throw new IllegalStateException("Has more than one constructor annotated");
       });
 
     if (maybeAnnotedConstructor.isPresent()) {
+      final Constructor<?> constructor = maybeAnnotedConstructor.get();
 
+      final var parameterCount = constructor.getParameterCount();
+
+      if (parameterCount == 0) return constructor.newInstance();
+
+      return null; // TODO: instantiate loaded class using constructor annotated with `Get.class`
     } else {
 
+      final var maybeInstance = maybeHandleNotAnnotatedDefaultConstructor(constructors);
+
+      if (maybeInstance.isPresent()) return maybeInstance.get();
+
+      return tryHandleDeclaredFields(loadedClass);
+    }
+  }
+
+  private static Optional<Object> maybeHandleNotAnnotatedDefaultConstructor(final Constructor<?>[] constructors) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    final var maybeDefaultConstructor = Arrays.stream(constructors)
+      .filter(constructor -> constructor.getParameterCount() == 0)
+      .findFirst();
+ 
+    return maybeDefaultConstructor.isPresent() ?
+      Optional.of(maybeDefaultConstructor.get().newInstance()) :
+      Optional.empty();
+
+  }
+
+  private static Object tryHandleDeclaredFields(final Class<?> loadedClass)
+    throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    try {
+      final var declaredFields = loadedClass.getDeclaredFields();
+
+      final var finalDeclaredFields = Arrays.stream(declaredFields)
+        .filter(field -> Modifier.isFinal(field.getModifiers()))
+        .toList();
+
+      final var parameters = finalDeclaredFields.stream()
+        .map(Field::getType)
+        .toArray(size -> new Class<?>[size]);
+
+      final Constructor<?> constructorWithFinalFields = loadedClass.getDeclaredConstructor(parameters);
+
+      final var parameterInstances = Arrays.stream(parameters)
+        .map(parameter -> instances.getOrDefault(parameter, null))
+        .toArray();
+
+      return constructorWithFinalFields.newInstance(parameterInstances);
+    }
+    catch (final NoSuchMethodException e) {
+      throw new IllegalStateException("Non-annotated constructor compatible was not found", e);
     }
   }
 
