@@ -47,7 +47,7 @@ public record InstanceWrapper(
       InstanceWrapper::lazyLoadInstance
     ));
 
-    final Object instance = constructorWithFinalFields.newInstance(dependencies.values());
+    final Object instance = constructorWithFinalFields.newInstance(dependencies.values().toArray());
 
     return new InstanceWrapper(
       instance,
