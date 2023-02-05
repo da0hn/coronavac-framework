@@ -7,11 +7,7 @@ import java.util.List;
 @Component
 public class ProductService {
 
-  private final ProductRepository repository;
-
-  public ProductService(final ProductRepository repository) {
-    this.repository = repository;
-  }
+  private ProductRepository repository;
 
   public List<Product> getFinalPrice(final List<Product> items) {
     final var list = this.repository.getPrice(items);

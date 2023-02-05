@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 
 public record InstanceWrapper(
   Object instance,
-  Map<Class<?>, Function<Class<?>, Object>> dependencies,
+  Map<Class<?>, Function<Class<?>, InstanceWrapper>> dependencies,
   boolean defaultConstructor,
-  boolean loaded
+  boolean loaded // FIXME: remove usage always inject dependency when `ApplicationContext.find()` is called
 ) {
 
   public static InstanceWrapper defaultConstructor(
@@ -33,15 +33,15 @@ public record InstanceWrapper(
     );
   }
 
-  private static Map<Class<?>, Function<Class<?>, Object>> getDependenciesMap(final Class<?>[] parameters) {
+  private static Map<Class<?>, Function<Class<?>, InstanceWrapper>> getDependenciesMap(final Class<?>[] parameters) {
     return Arrays.stream(parameters).collect(Collectors.toMap(
       Function.identity(),
       parameter -> InstanceWrapper::lazyLoadInstance
     ));
   }
 
-  private static Object lazyLoadInstance(final Class<?> parameter) {
-    return Coronavac.instances.getOrDefault(parameter, null).instance;
+  private static InstanceWrapper lazyLoadInstance(final Class<?> parameter) {
+    return Coronavac.instances.getOrDefault(parameter, null);
   }
 
   public static InstanceWrapper requiredFieldsConstructor(
@@ -84,7 +84,7 @@ public record InstanceWrapper(
   }
 
 
-  public Optional<Object> getField(final Class<?> clazz) {
+  public Optional<InstanceWrapper> getField(final Class<?> clazz) {
     final var objectFinderFunction = this.dependencies.getOrDefault(clazz, null);
     return Optional.ofNullable(objectFinderFunction)
       .map(fn -> fn.apply(clazz));
