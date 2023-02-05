@@ -135,7 +135,7 @@ final class Coronavac {
       );
     }
     catch (final NoSuchMethodException e) {
-      throw new IllegalStateException("Non-annotated constructor compatible was not found", e);
+      throw new IllegalStateException("Non-annotated constructor compatible was found", e);
     }
   }
 
