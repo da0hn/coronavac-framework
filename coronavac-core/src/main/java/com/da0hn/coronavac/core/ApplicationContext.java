@@ -27,7 +27,7 @@ public class ApplicationContext {
         // Does not change value of a field not found
         if(fieldInstance.isEmpty()) continue;
 
-        field.set(instance, fieldInstance);
+        field.set(instance, fieldInstance.get());
       }
       return instance;
     }
