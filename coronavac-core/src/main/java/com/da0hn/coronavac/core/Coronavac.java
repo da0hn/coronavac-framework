@@ -5,6 +5,7 @@ import com.da0hn.coronavac.commons.exceptions.IllegalClassException;
 import com.da0hn.coronavac.core.annotations.Component;
 import com.da0hn.coronavac.core.annotations.CoronavacApplication;
 import com.da0hn.coronavac.core.annotations.Get;
+import com.da0hn.coronavac.core.annotations.Repository;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -51,7 +52,7 @@ final class Coronavac {
 
         final Class<?> loadedClass = Class.forName(fullClassName);
 
-        if (loadedClass.isAnnotationPresent(Component.class)) {
+        if (loadedClass.isAnnotationPresent(Component.class) || loadedClass.isAnnotationPresent(Repository.class)) {
           final Constructor<?>[] constructors = loadedClass.getDeclaredConstructors();
           final var newInstance = getNewInstance(loadedClass, constructors);
           instances.put(loadedClass, newInstance);
@@ -105,7 +106,6 @@ final class Coronavac {
     return maybeDefaultConstructor.isPresent() ?
       Optional.of(maybeDefaultConstructor.get().newInstance()) :
       Optional.empty();
-
   }
 
   private static Object tryHandleDeclaredFields(final Class<?> loadedClass)
