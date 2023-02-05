@@ -87,7 +87,12 @@ final class Coronavac {
 
       if (parameterCount == 0) return InstanceWrapper.defaultConstructor(loadedClass, constructor);
 
-      return null; // TODO: instantiate loaded class using constructor annotated with `Get.class`
+      final var parameterTypes = constructor.getParameterTypes();
+
+      return InstanceWrapper.annotatedConstructor(
+        constructor,
+        parameterTypes
+      );
     } else {
 
       final var maybeInstance = maybeHandleNotAnnotatedDefaultConstructor(

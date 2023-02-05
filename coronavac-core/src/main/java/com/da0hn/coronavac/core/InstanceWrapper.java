@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 public record InstanceWrapper(
   Object instance,
-  Map<Class<?>, Object> dependencies,
+  Map<Class<?>, Function<Class<?>, Object>> dependencies,
   boolean defaultConstructor,
   boolean loaded
 ) {
@@ -23,11 +23,7 @@ public record InstanceWrapper(
 
     final var classes = CoronavacUtils.loadTypeDependenciesFromClass(loadedClass);
 
-    final var dependencies = Arrays.stream(classes)
-      .collect(Collectors.toMap(
-        Function.identity(),
-        InstanceWrapper::lazyLoadInstance
-      ));
+    final var dependencies = getDependenciesMap(classes);
 
     return new InstanceWrapper(
       instance,
@@ -37,17 +33,30 @@ public record InstanceWrapper(
     );
   }
 
+  private static Map<Class<?>, Function<Class<?>, Object>> getDependenciesMap(final Class<?>[] parameters) {
+    return Arrays.stream(parameters).collect(Collectors.toMap(
+      Function.identity(),
+      parameter -> InstanceWrapper::lazyLoadInstance
+    ));
+  }
+
+  private static Object lazyLoadInstance(final Class<?> parameter) {
+    return Coronavac.instances.getOrDefault(parameter, null).instance;
+  }
+
   public static InstanceWrapper requiredFieldsConstructor(
     final Constructor<?> constructorWithFinalFields,
     final Class<?>[] parameters
   ) throws InvocationTargetException, InstantiationException, IllegalAccessException {
 
-    final var dependencies = Arrays.stream(parameters).collect(Collectors.toMap(
-      Function.identity(),
-      InstanceWrapper::lazyLoadInstance
-    ));
+    final var dependencies = getDependenciesMap(parameters);
 
-    final Object instance = constructorWithFinalFields.newInstance(dependencies.values().toArray());
+    final Object instance = constructorWithFinalFields.newInstance(
+      dependencies.entrySet()
+        .stream()
+        .map(entry -> entry.getValue().apply(entry.getKey()))
+        .toArray()
+    );
 
     return new InstanceWrapper(
       instance,
@@ -57,13 +66,28 @@ public record InstanceWrapper(
     );
   }
 
-  private static Object lazyLoadInstance(final Class<?> parameter) {
-    return Coronavac.instances.getOrDefault(parameter, null).instance;
+  public static InstanceWrapper annotatedConstructor(
+    final Constructor<?> constructor,
+    final Class<?>[] parameters
+  ) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+
+    final var dependencies = getDependenciesMap(parameters);
+
+    final Object instance = constructor.newInstance(new Object[constructor.getParameterCount()]);
+
+    return new InstanceWrapper(
+      instance,
+      dependencies,
+      false,
+      false
+    );
   }
 
 
   public Optional<Object> getField(final Class<?> clazz) {
-    return Optional.ofNullable(this.dependencies.getOrDefault(clazz, null));
+    final var objectFinderFunction = this.dependencies.getOrDefault(clazz, null);
+    return Optional.ofNullable(objectFinderFunction)
+      .map(fn -> fn.apply(clazz));
   }
 
 }

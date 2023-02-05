@@ -12,14 +12,14 @@ public final class Application {
   public static void main(final String[] args) {
 
     final ApplicationContext context = new ApplicationContext(Application.class);
-    
+
     // Test if instance was found with dependencies injected
+
+    final var getProductService = context.find(GetProductService.class);
+    final var products = getProductService.get();
+
     final var productService = context.find(ProductService.class);
-    productService.getFinalPrice(List.of(
-      new Product("p1", 30),
-      new Product("p2", 25),
-      new Product("p3", 75)
-    ));
+    productService.getFinalPrice(products);
   }
 
 }
