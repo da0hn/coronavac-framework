@@ -20,7 +20,7 @@ import java.util.Optional;
 final class Coronavac {
 
 
-  static final Map<Class<?>, Object> instances = new HashMap<>();
+  static final Map<Class<?>, InstanceWrapper> instances = new HashMap<>();
 
 
   public static void initializeContext(final Class<?> applicationClass) {
@@ -69,7 +69,7 @@ final class Coronavac {
     }
   }
 
-  private static Object getNewInstance(
+  private static InstanceWrapper getNewInstance(
     final Class<?> loadedClass,
     final Constructor<?>[] constructors
   ) throws InvocationTargetException,
@@ -85,12 +85,15 @@ final class Coronavac {
 
       final var parameterCount = constructor.getParameterCount();
 
-      if (parameterCount == 0) return constructor.newInstance();
+      if (parameterCount == 0) return InstanceWrapper.defaultConstructor(loadedClass, constructor);
 
       return null; // TODO: instantiate loaded class using constructor annotated with `Get.class`
     } else {
 
-      final var maybeInstance = maybeHandleNotAnnotatedDefaultConstructor(constructors);
+      final var maybeInstance = maybeHandleNotAnnotatedDefaultConstructor(
+        loadedClass,
+        constructors
+      );
 
       if (maybeInstance.isPresent()) return maybeInstance.get();
 
@@ -98,17 +101,20 @@ final class Coronavac {
     }
   }
 
-  private static Optional<Object> maybeHandleNotAnnotatedDefaultConstructor(final Constructor<?>[] constructors) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+  private static Optional<InstanceWrapper> maybeHandleNotAnnotatedDefaultConstructor(
+    final Class<?> loadedClass,
+    final Constructor<?>[] constructors
+  ) throws InvocationTargetException, InstantiationException, IllegalAccessException {
     final var maybeDefaultConstructor = Arrays.stream(constructors)
       .filter(constructor -> constructor.getParameterCount() == 0)
       .findFirst();
- 
+
     return maybeDefaultConstructor.isPresent() ?
-      Optional.of(maybeDefaultConstructor.get().newInstance()) :
+      Optional.of(InstanceWrapper.defaultConstructor(loadedClass, maybeDefaultConstructor.get())) :
       Optional.empty();
   }
 
-  private static Object tryHandleDeclaredFields(final Class<?> loadedClass)
+  private static InstanceWrapper tryHandleDeclaredFields(final Class<?> loadedClass)
     throws InvocationTargetException, InstantiationException, IllegalAccessException {
     try {
       final var declaredFields = loadedClass.getDeclaredFields();
@@ -123,11 +129,10 @@ final class Coronavac {
 
       final Constructor<?> constructorWithFinalFields = loadedClass.getDeclaredConstructor(parameters);
 
-      final var parameterInstances = Arrays.stream(parameters)
-        .map(parameter -> instances.getOrDefault(parameter, null))
-        .toArray();
-
-      return constructorWithFinalFields.newInstance(parameterInstances);
+      return InstanceWrapper.requiredFieldsConstructor(
+        constructorWithFinalFields,
+        parameters
+      );
     }
     catch (final NoSuchMethodException e) {
       throw new IllegalStateException("Non-annotated constructor compatible was not found", e);
