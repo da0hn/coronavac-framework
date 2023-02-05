@@ -1,24 +1,20 @@
 package com.da0hn.coronavac.sample;
 
 import com.da0hn.coronavac.core.annotations.Component;
-import com.da0hn.coronavac.core.annotations.Get;
 
 import java.util.List;
 
 @Component
 public class GetProductService {
 
-  private ProductService service;
+  private final ProductService service;
 
 
-  @Get
+  // FIXME: always lazy load instance when find() is called!
   public GetProductService(final ProductService service) {
     this.service = service;
   }
 
-  public void setService(final ProductService service) {
-    this.service = service;
-  }
 
   public List<Product> get() {
     return this.service.getFinalPrice(List.of(
