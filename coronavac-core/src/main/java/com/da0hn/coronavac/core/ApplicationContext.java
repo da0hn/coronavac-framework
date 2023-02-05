@@ -9,7 +9,7 @@ public class ApplicationContext {
     Coronavac.initializeContext(clazz);
   }
 
-  @SuppressWarnings({"raw", "unchecked"})
+  @SuppressWarnings({"raw"})
   private static <T> void injectDependency(
     final Class<T> targetClass,
     final InstanceWrapper instanceWrapper
@@ -21,23 +21,21 @@ public class ApplicationContext {
 
       final Class<?> classField = field.getType();
 
-      final var fieldInstanceWrapper = instanceWrapper.getField(classField);
+      final var maybeFieldInstanceWrapper = instanceWrapper.getField(classField);
 
       // Does not change value of a field not found
-      if (fieldInstanceWrapper.isEmpty()) continue;
+      if (maybeFieldInstanceWrapper.isEmpty()) continue;
 
-      field.set(instanceWrapper.instance(), fieldInstanceWrapper.get().instance());
-      injectDependency(classField, fieldInstanceWrapper.get());
+      field.set(instanceWrapper.instance(), maybeFieldInstanceWrapper.get().instance());
+      injectDependency(classField, maybeFieldInstanceWrapper.get());
     }
   }
 
-  @SuppressWarnings({"raw", "unchecked"})
   public <T> T find(final Class<T> targetClass) {
     try {
       final var instanceWrapper = Coronavac.instances.get(targetClass);
 
-      if (instanceWrapper.loaded()) return (T) instanceWrapper.instance();
-
+      @SuppressWarnings({"raw", "unchecked"})
       final var instance = (T) instanceWrapper.instance();
 
       injectDependency(targetClass, instanceWrapper);

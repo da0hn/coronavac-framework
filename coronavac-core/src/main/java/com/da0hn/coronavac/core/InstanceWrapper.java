@@ -10,9 +10,7 @@ import java.util.stream.Collectors;
 
 public record InstanceWrapper(
   Object instance,
-  Map<Class<?>, Function<Class<?>, InstanceWrapper>> dependencies,
-  boolean defaultConstructor,
-  boolean loaded // FIXME: remove usage always inject dependency when `ApplicationContext.find()` is called
+  Map<Class<?>, Function<Class<?>, InstanceWrapper>> dependencies
 ) {
 
   public static InstanceWrapper defaultConstructor(
@@ -27,9 +25,7 @@ public record InstanceWrapper(
 
     return new InstanceWrapper(
       instance,
-      dependencies,
-      true,
-      false
+      dependencies
     );
   }
 
@@ -60,9 +56,7 @@ public record InstanceWrapper(
 
     return new InstanceWrapper(
       instance,
-      dependencies,
-      false,
-      true
+      dependencies
     );
   }
 
@@ -77,9 +71,7 @@ public record InstanceWrapper(
 
     return new InstanceWrapper(
       instance,
-      dependencies,
-      false,
-      false
+      dependencies
     );
   }
 

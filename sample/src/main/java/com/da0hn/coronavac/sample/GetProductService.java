@@ -10,7 +10,7 @@ public class GetProductService {
   private final ProductService service;
 
 
-  // FIXME: always lazy load instance when find() is called!
+  // Injected By Coronavac Framework 
   public GetProductService(final ProductService service) {
     this.service = service;
   }
